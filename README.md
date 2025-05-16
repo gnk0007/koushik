@@ -1,84 +1,154 @@
-/* src/component/EducationPage.css */
-.education-page {
-  max-width: 1000px;
-  margin: 40px auto;
-  padding: 30px;
-  background: #fffdf8;
-  font-family: 'Segoe UI', sans-serif;
-  border-radius: 16px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+package com.pawsos.pawsosbackend.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+import java.time.LocalDate;
+
+@Entity
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class Medication {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String name;
+    private String dosage;
+    private String frequency;
+    private LocalDate startDate;
+    private LocalDate endDate;
+    private LocalDate expiryDate;
+    private String notes;
+
+    @ManyToOne
+    @JoinColumn(name = "pet_id")
+    private Pet pet;
 }
 
-.education-page h1 {
-  text-align: center;
-  font-size: 2.5rem;
-  color: #ff7a00;
-  margin-bottom: 30px;
+
+
+
+package com.pawsos.pawsosbackend.dto;
+
+import lombok.*;
+import java.time.LocalDate;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class MedicationDTO {
+    private Long petId;
+    private String name;
+    private String dosage;
+    private String frequency;
+    private LocalDate startDate;
+    private LocalDate endDate;
+    private LocalDate expiryDate;
+    private String notes;
 }
 
-.filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 15px;
-  margin-bottom: 25px;
-  justify-content: center;
+
+
+package com.pawsos.pawsosbackend.repository;
+
+import com.pawsos.pawsosbackend.entity.Medication;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface MedicationRepository extends JpaRepository<Medication, Long> {
 }
 
-.filters input,
-.filters select {
-  padding: 10px;
-  font-size: 1rem;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  min-width: 200px;
+
+
+package com.pawsos.pawsosbackend.service;
+
+import com.pawsos.pawsosbackend.dto.MedicationDTO;
+import com.pawsos.pawsosbackend.entity.Medication;
+import com.pawsos.pawsosbackend.entity.Pet;
+import com.pawsos.pawsosbackend.repository.MedicationRepository;
+import com.pawsos.pawsosbackend.repository.PetRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+public class MedicationService {
+
+    @Autowired
+    private MedicationRepository medicationRepository;
+
+    @Autowired
+    private PetRepository petRepository;
+
+    public String addMedication(MedicationDTO dto) {
+        Pet pet = petRepository.findById(dto.getPetId())
+                .orElseThrow(() -> new RuntimeException("Pet not found"));
+
+        Medication medication = new Medication();
+        medication.setPet(pet);
+        medication.setName(dto.getName());
+        medication.setDosage(dto.getDosage());
+        medication.setFrequency(dto.getFrequency());
+        medication.setStartDate(dto.getStartDate());
+        medication.setEndDate(dto.getEndDate());
+        medication.setExpiryDate(dto.getExpiryDate());
+        medication.setNotes(dto.getNotes());
+
+        medicationRepository.save(medication);
+        return "Medication added successfully!";
+    }
+
+    public List<Medication> getAllMedications() {
+        return medicationRepository.findAll();
+    }
 }
 
-.resources {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 20px;
+
+
+package com.pawsos.pawsosbackend.controller;
+
+import com.pawsos.pawsosbackend.dto.MedicationDTO;
+import com.pawsos.pawsosbackend.entity.Medication;
+import com.pawsos.pawsosbackend.service.MedicationService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/medications")
+@CrossOrigin(origins = "*")
+public class MedicationController {
+
+    @Autowired
+    private MedicationService medicationService;
+
+    @PostMapping("/add")
+    public String addMedication(@RequestBody MedicationDTO dto) {
+        return medicationService.addMedication(dto);
+    }
+
+    @GetMapping("/all")
+    public List<Medication> getAll() {
+        return medicationService.getAllMedications();
+    }
 }
 
-.resource-card {
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.06);
-  padding: 20px;
-  transition: transform 0.2s ease-in-out;
+
+
+
+{
+  "petId": 1,
+  "name": "Metacam",
+  "dosage": "5ml",
+  "frequency": "Once daily",
+  "startDate": "2024-05-10",
+  "endDate": "2024-05-20",
+  "expiryDate": "2025-01-01",
+  "notes": "Anti-inflammatory medication"
 }
 
-.resource-card:hover {
-  transform: translateY(-3px);
-}
 
-.resource-card img {
-  width: 100%;
-  border-radius: 10px;
-  margin-bottom: 10px;
-}
 
-.resource-card h2 {
-  color: #ff7300;
-  font-size: 1.3rem;
-  margin: 10px 0 5px;
-}
-
-.resource-card p {
-  font-size: 0.95rem;
-  margin-bottom: 10px;
-  color: #444;
-}
-
-.resource-card button {
-  background-color: #ff7300;
-  color: #fff;
-  padding: 8px 14px;
-  font-size: 0.95rem;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.resource-card button:hover {
-  background-color: #e06200;
-}
